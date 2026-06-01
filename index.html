@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Web Speech API 教程</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: system-ui, sans-serif;
+      background: #1a1a2e;
+      color: #eee;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .container {
+      background: #16213e;
+      border-radius: 16px;
+      padding: 2rem;
+      max-width: 500px;
+      width: 90%;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, .3);
+    }
+    h1 { text-align: center; margin-bottom: 1.5rem; font-size: 1.5rem; }
+    .output {
+      background: #0f3460;
+      border-radius: 8px;
+      padding: 1rem;
+      min-height: 100px;
+      margin-bottom: 1rem;
+      font-size: 1.1rem;
+      line-height: 1.6;
+    }
+    .output:empty::after {
+      content: "点击下方按钮开始语音识别...";
+      color: #666;
+    }
+    .controls { display: flex; gap: .75rem; justify-content: center; flex-wrap: wrap; }
+    button {
+      padding: .75rem 1.5rem;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all .2s;
+    }
+    button:disabled { opacity: .4; cursor: not-allowed; }
+    .btn-start { background: #e94560; color: #fff; }
+    .btn-start:hover:not(:disabled) { background: #d63851; }
+    .btn-stop { background: #555; color: #fff; }
+    .btn-speak { background: #0f3460; color: #fff; }
+    .btn-speak:hover:not(:disabled) { background: #1a4a7a; }
+    .status {
+      text-align: center;
+      font-size: .85rem;
+      color: #888;
+      margin-top: .75rem;
+    }
+    .status.listening { color: #e94560; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎤 Web Speech API 教程</h1>
+    <div class="output" id="output"></div>
+    <div class="controls">
+      <button class="btn-start" id="btnStart" onclick="startListening()">开始识别</button>
+      <button class="btn-stop" id="btnStop" onclick="stopListening()" disabled>停止</button>
+      <button class="btn-speak" id="btnSpeak" onclick="speakText()">朗读文本</button>
+    </div>
+    <div class="status" id="status">准备就绪</div>
+  </div>
+
+  <script>
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = SpeechRecognition ? new SpeechRecognition() : null;
+
+    if (recognition) {
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = 'zh-CN';
+
+      recognition.onresult = (event) => {
+        let interim = '';
+        let final = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const transcript = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            final += transcript;
+          } else {
+            interim += transcript;
+          }
+        }
+        const output = document.getElementById('output');
+        output.innerHTML = (output.innerHTML.replace(/<em>.*<\/em>/, '').trim() + ' ' + final).trim();
+        if (interim) output.innerHTML += ` <em style="color:#888">${interim}</em>`;
+      };
+
+      recognition.onstart = () => {
+        document.getElementById('status').textContent = '正在听...';
+        document.getElementById('status').classList.add('listening');
+        document.getElementById('btnStart').disabled = true;
+        document.getElementById('btnStop').disabled = false;
+      };
+
+      recognition.onend = () => {
+        document.getElementById('status').textContent = '准备就绪';
+        document.getElementById('status').classList.remove('listening');
+        document.getElementById('btnStart').disabled = false;
+        document.getElementById('btnStop').disabled = true;
+      };
+
+      recognition.onerror = (e) => {
+        document.getElementById('status').textContent = '错误: ' + e.error;
+        document.getElementById('status').classList.remove('listening');
+      };
+    }
+
+    function startListening() {
+      if (!recognition) { alert('你的浏览器不支持 Web Speech API，请使用 Chrome 或 Edge。'); return; }
+      document.getElementById('output').innerHTML = '';
+      recognition.start();
+    }
+
+    function stopListening() { recognition?.stop(); }
+
+    function speakText() {
+      const text = document.getElementById('output').textContent.trim();
+      if (!text) { alert('请先识别一些文字，或手动输入内容。'); return; }
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'zh-CN';
+      speechSynthesis.speak(utterance);
+    }
+  </script>
+</body>
+</html>
