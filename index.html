@@ -124,7 +124,13 @@
       recognition.start();
     }
 
-    function stopListening() { recognition?.stop(); }
+    function stopListening() {
+      recognition?.stop();
+      document.getElementById('status').textContent = '已停止';
+      document.getElementById('status').classList.remove('listening');
+      document.getElementById('btnStart').disabled = false;
+      document.getElementById('btnStop').disabled = true;
+    }
 
     function speakText() {
       const text = document.getElementById('output').textContent.trim();
